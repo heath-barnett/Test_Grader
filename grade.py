@@ -9,7 +9,8 @@ Location = 'data/results_grid.xlsx'
 
 # Parse a specific sheet
 df = pd.read_excel(Location,0,converters={'ID Number':str})
-
+keys = df.loc[:1,'Q 1':]
+results = df.loc[2:]
 
 # Change the default delimiters used by Jinja such that it won't pick up brackets attached to LaTeX macros.
 report_renderer = jinja2.Environment(
@@ -26,7 +27,7 @@ report_renderer = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.abspath('.'))
 )
 
-for i, row in df.iterrows():
+for i, row in df.results():
     template = report_renderer.get_template('templates/report_template.tex')
     name = row['Student Name']
     cwid = str(row['ID Number'])
@@ -34,17 +35,29 @@ for i, row in df.iterrows():
     keyname = row['Key Name']
     score = row['Score']
     correct = row['# Correct']
-    question = str(i)
     blank = row['Blank Count']
-    uresp = pd.DataFrame(row['Q 1':]).to_latex(header=False)
+
+    df1 = row['Q 1':]
+    key = row['Key Name']
+    if key == 'A':
+        keyid = 0
+    else:
+        keyid = 1
+    ans = keys.ix[keyid]
+    gradeTable = pd.concat([df1, ans], axis=1)
+    gradeTable.columns = ['User Response', 'Correct Response']
+    gradeTable = pd.DataFrame(gradeTable).to_latex()
+
     filename = str(name).replace(" ", "_") + '_results.tex'
     folder = 'output'
     outpath = os.path.join(folder, filename)
     outfile = open(outpath, 'w')
-    outfile.write(template.render(name=name, cwid=cwid, exam=exam, keyname=keyname, score=score, correct=correct, question=question, uresp=uresp))
+    outfile.write(template.render(name=name, cwid=cwid, exam=exam, keyname=keyname, score=score, correct=correct, gradeTable=gradeTable))
     outfile.close()
     os.system("pdflatex -output-directory=" + folder + " " + outpath + '>/dev/null')
-os.system("rm "+ folder +"/*.tex")
+    if i ==3:
+        break
+#os.system("rm "+ folder +"/*.tex")
 os.system("rm "+ folder +"/*.aux")
 os.system("rm "+ folder +"/*.log")
 print('Grader is finished.')
