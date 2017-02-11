@@ -27,7 +27,7 @@ report_renderer = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.abspath('.'))
 )
 
-for i, row in df.results():
+for i, row in results.iterrows():
     template = report_renderer.get_template('templates/report_template.tex')
     name = row['Student Name']
     cwid = str(row['ID Number'])
@@ -54,10 +54,11 @@ for i, row in df.results():
     outfile = open(outpath, 'w')
     outfile.write(template.render(name=name, cwid=cwid, exam=exam, keyname=keyname, score=score, correct=correct, gradeTable=gradeTable))
     outfile.close()
-    os.system("pdflatex -output-directory=" + folder + " " + outpath + '>/dev/null')
+    os.system('pdflatex -output-directory=' + folder + " " + outpath)
+    #os.system("pdflatex -outpu\\t-directory=" + folder + " " + outpath)
     if i ==3:
         break
 #os.system("rm "+ folder +"/*.tex")
-os.system("rm "+ folder +"/*.aux")
-os.system("rm "+ folder +"/*.log")
+#os.system("rm "+ folder +"/*.aux")
+#os.system("rm "+ folder +"/*.log")
 print('Grader is finished.')
