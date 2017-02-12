@@ -1,15 +1,46 @@
 __author__ = 'heath'
-import sys, os, csv, jinja2, glob
+import sys, os, csv, jinja2, glob, smtplib
 import pandas as pd
 import numpy as np
 import sqlite3
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
+from email.utils import COMMASPACE, formatdate
+from email import encoders
+
+def send_mail( send_from, send_to, subject, text, files=[], server="outlook.office365.com", port=587, username='hbarnett@ulm.edu', password='Tenrab77', isTls=True):
+    msg = MIMEMultipart()
+    msg['From'] = send_from
+    msg['To'] = send_to
+    msg['Date'] = formatdate(localtime = True)
+    msg['Subject'] = subject
+
+    msg.attach( MIMEText(text) )
+
+    for f in files:
+        part = MIMEBase('application', "octet-stream")
+        part.set_payload( open(f,"rb").read() )
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition', 'attachment; filename="{0}"'.format(os.path.basename(f)))
+        msg.attach(part)
+
+    smtp = smtplib.SMTP(server, port)
+    if isTls: smtp.starttls()
+    smtp.login(username,password)
+    smtp.sendmail(send_from, send_to, msg.as_string())
+    smtp.quit()
 
 # Location of file
 Location = 'data/Exam_I_Results_Grid.xlsx'
+Roster = 'data/roster_chem1007_spring_2017.xlsx'
 
 # Parse a specific sheet
 df = pd.read_excel(Location,0,converters={'ID Number':str})
+dfroster = pd.read_excel(Roster,0,converters={'ID Number':str})
 keys = df.loc[:1,'Q 1':]
+df = df.merge(dfroster[['Email address', 'ID Number']], on='ID Number')
+
 results = df.loc[2:]
 results = results.assign(Total=round(results['Short Answer']+results['# Correct']/30*40,2).values)
 tavg = round(results['Total'].mean(),2)
@@ -53,7 +84,7 @@ for i, row in df.loc[2:].iterrows():
     total = format(sans + correct/30*40,'.2f')
     blank = str(row['Blank Count'])
     cid = 'Chemistry 1007'
-    df1 = row['Q 1':]
+    df1 = row['Q 1':'Q 30']
     max = len(df1.index)
     key = row['Key Name']
     if key == 'A':
@@ -65,7 +96,9 @@ for i, row in df.loc[2:].iterrows():
     gradeTable.columns = ['Response', 'Correct']
     gradeTable = pd.DataFrame(gradeTable).to_latex(bold_rows=True, column_format='rcc')
 
-    filename = str(name).replace(" ", "_") + '_results.tex'
+    filename = str(name).replace(" ", "_") + '_Exam_I_Results.tex'
+    email = row['Email address']
+
     folder = 'output'
     outpath = os.path.join(folder, filename)
     outfile = open(outpath, 'w')
@@ -74,8 +107,10 @@ for i, row in df.loc[2:].iterrows():
     os.system('pdflatex -quiet -output-directory=' + folder + " " + outpath)
     #for OS X / Linux
     #os.system("pdflatex -output-directory=" + folder + " " + outpath)
-    if i ==3:
-        break
+    rpt = filename.replace('.tex', '.pdf')
+    rpt_path = os.path.join(folder,rpt)
+    #send_mail(send_from='hbarnett@ulm.edu', send_to=email, files=[rpt_path], subject='Exam I Results', text='Please see the attached pdf for a breakdown of Exam I. Inside the document you will find your scores, correct answers and some basic statistics. I will hand back your exam on Monday and we can discuss it in more detail at that time.\n\n Heath Barnett')
+
 os.chdir(folder)
 for filename in glob.glob('*.tex'):
     os.remove( filename )

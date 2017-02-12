@@ -2,11 +2,12 @@
 \usepackage[margin=0.5in]{geometry}
 \usepackage{siunitx}
 \usepackage{booktabs}
+\usepackage{fancyhdr}
 
 \renewcommand{\arraystretch}{1.1}
 
 \begin{document}
-\header{\textbf{Exam I Results - \VAR{name} (\VAR{cwid}) }}
+\textbf{Exam I Results - \VAR{name} (\VAR{cwid})}
 \thispagestyle{empty}
 \newline
 
@@ -28,7 +29,7 @@ where SA is your short answer points, MC is the number of multiple choice questi
 
 \begin{tabular}{lcccc}\hline
 \centering
- & \textbf{You} & \textbf{Class Average} & \textbf{Minium} & \textbf{Maximum}\\ \hline
+ & \textbf{You} & \textbf{Class Average} & \textbf{Low Score} & \textbf{Hi Score}\\ \hline
 \textbf{Multiple Choice} & \VAR{correct} & \VAR{mcm} & \VAR{mcmin} & \VAR{mcmax}\\
 \textbf{Short Answer} & \VAR{sans}& \VAR{sam} & \VAR{samin} & \VAR{samax}\\
  \textbf{Total} & \VAR{total}& \VAR{tavg} & \VAR{tmin} & \VAR{tmax}\\ \hline
